@@ -1,8 +1,18 @@
+import 'package:hive/hive.dart';
 import 'shopping_item.dart';
 
-class ShoppingList {
-  final String name;
-  List<ShoppingItem> items = [];
+part 'shopping_list.g.dart';
 
-  ShoppingList({required this.name});
+@HiveType(typeId: 1)
+class ShoppingList extends HiveObject {
+  @HiveField(0)
+  final String name;
+
+  @HiveField(1)
+  List<ShoppingItem> items;
+
+  ShoppingList({
+    required this.name,
+    this.items = const [],
+  });
 }

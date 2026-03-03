@@ -14,11 +14,14 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
 
   void _addItem() {
     _nameController.clear();
     _priceController.clear();
     _categoryController.clear();
+    _quantityController.text = "1"; // default quantity
+
     showDialog(
       context: context,
       builder: (context) {
@@ -37,8 +40,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                 decoration: const InputDecoration(labelText: 'Category (optional)'),
               ),
               TextField(
+                controller: _quantityController,
+                decoration: const InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
                 controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price'),
+                decoration: const InputDecoration(labelText: 'Price per item'),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
             ],
@@ -49,11 +57,23 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               onPressed: () {
                 final name = _nameController.text.trim();
                 final category = _categoryController.text.trim().isEmpty ? 'Other' : _categoryController.text.trim();
-                final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+                final quantity = int.tryParse(_quantityController.text.trim()) ?? 1;
+                final pricePerItem = double.tryParse(_priceController.text.trim()) ?? 0.0;
+
                 if (name.isEmpty) return;
+
                 setState(() {
-                  widget.list.items.add(ShoppingItem(name: name, category: category, price: price));
+                  widget.list.items.add(
+                    ShoppingItem(
+                      name: name,
+                      category: category,
+                      quantity: quantity,
+                      pricePerItem: pricePerItem,
+                    ),
+                  );
+                  widget.list.save(); // SAVE changes
                 });
+
                 Navigator.pop(context);
               },
               child: const Text('Add'),
@@ -67,8 +87,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   void _editItem(int index) {
     final item = widget.list.items[index];
     _nameController.text = item.name;
-    _priceController.text = item.price.toStringAsFixed(2);
     _categoryController.text = item.category;
+    _quantityController.text = item.quantity.toString();
+    _priceController.text = item.pricePerItem.toStringAsFixed(2);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -79,11 +101,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             children: [
               TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
               TextField(controller: _categoryController, decoration: const InputDecoration(labelText: 'Category')),
-              TextField(
-                controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              ),
+              TextField(controller: _quantityController, decoration: const InputDecoration(labelText: 'Quantity'), keyboardType: TextInputType.number),
+              TextField(controller: _priceController, decoration: const InputDecoration(labelText: 'Price per item'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
               Row(
                 children: [
                   const Text('Favorite:'),
@@ -93,9 +112,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                     onChanged: (v) {
                       setState(() {
                         item.isFavorite = v ?? false;
+                        widget.list.save();
                       });
                     },
-                  ),
+                  )
                 ],
               )
             ],
@@ -106,15 +126,21 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               onPressed: () {
                 final newName = _nameController.text.trim();
                 final newCategory = _categoryController.text.trim().isEmpty ? 'Other' : _categoryController.text.trim();
-                final newPrice = double.tryParse(_priceController.text.trim()) ?? 0.0;
+                final newQuantity = int.tryParse(_quantityController.text.trim()) ?? 1;
+                final newPricePerItem = double.tryParse(_priceController.text.trim()) ?? 0.0;
+
                 if (newName.isEmpty) return;
+
                 setState(() {
                   widget.list.items[index] = widget.list.items[index].copyWith(
                     name: newName,
                     category: newCategory,
-                    price: newPrice,
+                    quantity: newQuantity,
+                    pricePerItem: newPricePerItem,
                   );
+                  widget.list.save(); // SAVE edits
                 });
+
                 Navigator.pop(context);
               },
               child: const Text('Save'),
@@ -139,6 +165,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               onPressed: () {
                 setState(() {
                   widget.list.items.removeAt(index);
+                  widget.list.save();
                 });
                 Navigator.pop(context);
               },
@@ -153,11 +180,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   void _toggleFavorite(int index) {
     setState(() {
       widget.list.items[index].isFavorite = !widget.list.items[index].isFavorite;
+      widget.list.save();
     });
   }
 
-  double get total =>
-      widget.list.items.fold(0.0, (sum, item) => sum + item.price);
+  double get total => widget.list.items.fold(0.0, (sum, item) => sum + item.totalPrice);
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +225,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                             child: Text(item.category.isNotEmpty ? item.category[0].toUpperCase() : '?'),
                           ),
                           title: Text(item.name),
-                          subtitle: Text('${item.category} • \$${item.price.toStringAsFixed(2)}'),
+                          subtitle: Text(
+                              '${item.category} • ${item.quantity} x \$${item.pricePerItem.toStringAsFixed(2)} = \$${item.totalPrice.toStringAsFixed(2)}'),
                           trailing: PopupMenuButton<String>(
                             onSelected: (value) {
                               switch (value) {

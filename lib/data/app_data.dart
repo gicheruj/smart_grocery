@@ -1,7 +1,7 @@
+import 'package:hive/hive.dart';
 import '../models/shopping_list.dart';
 
 class AppData {
-  // Default categories
   static List<String> defaultCategories = [
     "Dairy",
     "Vegetables",
@@ -17,7 +17,8 @@ class AppData {
 
   static List<String> categories = List.from(defaultCategories);
 
-  static List<ShoppingList> shoppingLists = [];
+  static Box<ShoppingList> get shoppingListsBox =>
+      Hive.box<ShoppingList>('shoppingLists');
 
   static bool isDarkMode = false;
 }

@@ -49,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final category = AppData.categories[index];
 
     // Prevent deletion if items exist in this category
-    bool used = AppData.shoppingLists.any((list) =>
+    bool used = AppData.shoppingListsBox.values.toList().any((list) =>
         list.items.any((item) => item.category == category));
 
     if (used) {
@@ -152,7 +152,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ElevatedButton.icon(
               onPressed: () {
                 setState(() {
-                  AppData.shoppingLists.clear();
+                  AppData.shoppingListsBox.values.toList().clear();
                   AppData.categories = AppData.defaultCategories.toList();
                 });
               },

@@ -1,29 +1,38 @@
+import 'package:hive/hive.dart';
+
+part 'shopping_item.g.dart';
 
 class ShoppingItem {
   String name;
   String category;
-  double price;
+  int quantity;
+  double pricePerItem;
   bool isFavorite;
 
   ShoppingItem({
     required this.name,
     required this.category,
-    required this.price,
+    this.quantity = 1,
+    required this.pricePerItem,
     this.isFavorite = false,
   });
+
+  // Total price = quantity * pricePerItem
+  double get totalPrice => quantity * pricePerItem;
 
   ShoppingItem copyWith({
     String? name,
     String? category,
-    double? price,
+    int? quantity,
+    double? pricePerItem,
     bool? isFavorite,
   }) {
     return ShoppingItem(
       name: name ?? this.name,
       category: category ?? this.category,
-      price: price ?? this.price,
+      quantity: quantity ?? this.quantity,
+      pricePerItem: pricePerItem ?? this.pricePerItem,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }
-

@@ -14,6 +14,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _listNameController = TextEditingController();
 
   void _createNewList() {
+    _listNameController.clear();
     showDialog(
       context: context,
       builder: (context) {
@@ -36,9 +37,13 @@ class _HomePageState extends State<HomePage> {
               onPressed: () {
                 final name = _listNameController.text.trim();
                 if (name.isEmpty) return;
+
                 setState(() {
-                  AppData.shoppingLists.add(ShoppingList(name: name));
+                  AppData.shoppingListsBox.add(
+                    ShoppingList(name: name, items: []),
+                  );
                 });
+
                 _listNameController.clear();
                 Navigator.pop(context);
               },
@@ -51,7 +56,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _confirmDeleteList(int index) {
-    final list = AppData.shoppingLists[index];
+    final list = AppData.shoppingListsBox.getAt(index)!;
     showDialog(
       context: context,
       builder: (context) {
@@ -66,7 +71,7 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  AppData.shoppingLists.removeAt(index);
+                  AppData.shoppingListsBox.deleteAt(index);
                 });
                 Navigator.pop(context);
               },
@@ -86,6 +91,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Use Hive box values as a list
+    final shoppingLists = AppData.shoppingListsBox.values.toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Your Shopping Lists"),
@@ -96,7 +104,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green[700],
         child: const Icon(Icons.add),
       ),
-      body: AppData.shoppingLists.isEmpty
+      body: shoppingLists.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -105,7 +113,8 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const Text(
                       "No shopping lists yet",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -117,22 +126,25 @@ class _HomePageState extends State<HomePage> {
                       icon: const Icon(Icons.add),
                       label: const Text("Create your first list"),
                       onPressed: _createNewList,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700]),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[700]),
                     ),
                   ],
                 ),
               ),
             )
           : ListView.builder(
-              itemCount: AppData.shoppingLists.length,
+              itemCount: shoppingLists.length,
               itemBuilder: (context, index) {
-                final list = AppData.shoppingLists[index];
+                final list = shoppingLists[index];
                 return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 8.0),
                   elevation: 3,
                   child: ListTile(
-                    title: Text(list.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                    title: Text(list.name,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w600)),
                     subtitle: Text("${list.items.length} items"),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -150,7 +162,8 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ShoppingListPage(list: list),
+                          builder: (_) =>
+                              ShoppingListPage(list: list),
                         ),
                       ).then((_) => setState(() {}));
                     },

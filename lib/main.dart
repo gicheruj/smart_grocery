@@ -1,10 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
 import 'pages/home_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/settings_page.dart';
-import 'data/app_data.dart'; 
+import 'models/shopping_item.dart';
+import 'models/shopping_list.dart';
+import 'data/app_data.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(ShoppingItemAdapter());
+  Hive.registerAdapter(ShoppingListAdapter());
+
+  await Hive.openBox<ShoppingList>('shoppingLists');
+
   runApp(const MyApp());
 }
 
@@ -34,16 +47,20 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
       darkTheme: ThemeData.dark(useMaterial3: true),
-      themeMode: AppData.isDarkMode ? ThemeMode.dark : ThemeMode.light, // <-- dynamic theme
+      themeMode: AppData.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
         body: _pages[_currentIndex],
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex,
-          onDestinationSelected: (index) => setState(() => _currentIndex = index),
+          onDestinationSelected: (index) =>
+              setState(() => _currentIndex = index),
           destinations: const [
-            NavigationDestination(icon: Icon(Icons.list), label: 'Lists'),
-            NavigationDestination(icon: Icon(Icons.favorite), label: 'Favorites'),
-            NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
+            NavigationDestination(
+                icon: Icon(Icons.list), label: 'Lists'),
+            NavigationDestination(
+                icon: Icon(Icons.favorite), label: 'Favorites'),
+            NavigationDestination(
+                icon: Icon(Icons.settings), label: 'Settings'),
           ],
         ),
       ),

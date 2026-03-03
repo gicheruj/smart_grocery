@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/app_data.dart';
 import '../models/shopping_item.dart';
-// import '../models/shopping_list.dart';
-// import '../pages/shopping_list_page.dart';
+import '../models/shopping_list.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -16,7 +15,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   Map<String, List<ShoppingItem>> get _favoritesByCategory {
     Map<String, List<ShoppingItem>> map = {};
-    for (var list in AppData.shoppingLists) {
+    for (var list in AppData.shoppingListsBox.values) {
       for (var item in list.items) {
         if (item.isFavorite) {
           map.putIfAbsent(item.category, () => []).add(item);
@@ -27,9 +26,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
     return map;
   }
 
-  void _unfavoriteItem(ShoppingItem item) {
+  void _unfavoriteItem(ShoppingItem item, ShoppingList list) {
     setState(() {
       item.isFavorite = false;
+      list.save(); // <- SAVE favorite removal
     });
   }
 
@@ -43,14 +43,15 @@ class _FavoritesPageState extends State<FavoritesPage> {
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: AppData.shoppingLists.length,
+              itemCount: AppData.shoppingListsBox.length,
               itemBuilder: (context, index) {
-                final list = AppData.shoppingLists[index];
+                final list = AppData.shoppingListsBox.getAt(index)!;
                 return ListTile(
                   title: Text(list.name),
                   onTap: () {
                     setState(() {
                       list.items.add(item.copyWith());
+                      list.save(); // <- SAVE addition
                     });
                     Navigator.pop(context);
                   },
@@ -63,13 +64,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 
-  void _editItem(ShoppingItem item) {
+  void _editItem(ShoppingItem item, ShoppingList list) {
     showDialog(
       context: context,
       builder: (context) {
         final nameController = TextEditingController(text: item.name);
         final categoryController = TextEditingController(text: item.category);
-        final priceController = TextEditingController(text: item.price.toStringAsFixed(2));
+        final priceController =
+            TextEditingController(text: item.pricePerItem.toStringAsFixed(2));
         bool isFav = item.isFavorite;
 
         return AlertDialog(
@@ -99,8 +101,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 setState(() {
                   item.name = nameController.text.trim();
                   item.category = categoryController.text.trim().isEmpty ? "Other" : categoryController.text.trim();
-                  item.price = double.tryParse(priceController.text.trim()) ?? 0.0;
+                  item.pricePerItem = double.tryParse(priceController.text.trim()) ?? 0.0;
                   item.isFavorite = isFav;
+                  list.save(); // <- SAVE edits
                 });
                 Navigator.pop(context);
               },
@@ -136,13 +139,17 @@ class _FavoritesPageState extends State<FavoritesPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             children: items.map((item) {
+              // Find the list that contains this item
+              final parentList = AppData.shoppingListsBox.values.firstWhere(
+                  (list) => list.items.contains(item));
+
               return ListTile(
                 leading: CircleAvatar(
                   backgroundColor: Colors.green[200],
                   child: Text(item.category.isNotEmpty ? item.category[0].toUpperCase() : "?"),
                 ),
                 title: Text(item.name),
-                subtitle: Text("\$${item.price.toStringAsFixed(2)}"),
+                subtitle: Text("\$${item.pricePerItem.toStringAsFixed(2)}"),
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) {
                     switch (value) {
@@ -150,10 +157,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         _addToList(item);
                         break;
                       case "edit":
-                        _editItem(item);
+                        _editItem(item, parentList);
                         break;
                       case "unfav":
-                        _unfavoriteItem(item);
+                        _unfavoriteItem(item, parentList);
                         break;
                     }
                   },
@@ -171,4 +178,3 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 }
-
