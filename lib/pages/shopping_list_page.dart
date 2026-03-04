@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/shopping_list.dart';
 import '../models/shopping_item.dart';
+import '../data/app_data.dart';
 
 class ShoppingListPage extends StatefulWidget {
   final ShoppingList list;
@@ -196,7 +197,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             color: Colors.green[100],
             padding: const EdgeInsets.all(12),
             child: Text(
-              "Total: \$${total.toStringAsFixed(2)}",
+              "Total: ${AppData.currencySymbols[AppData.selectedCurrency]}${total.toStringAsFixed(2)}",
               textAlign: TextAlign.center,
               style:
                   const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -233,7 +234,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                             ),
                           ),
                           subtitle: Text(
-                              "${item.category} • ${item.quantity} x \$${item.pricePerItem.toStringAsFixed(2)} = \$${item.totalPrice.toStringAsFixed(2)}"),
+                              "${item.category} • ${item.quantity} x ${AppData.currencySymbols[AppData.selectedCurrency]}${item.pricePerItem.toStringAsFixed(2)} = ${AppData.currencySymbols[AppData.selectedCurrency]}${item.totalPrice.toStringAsFixed(2)}"),
 
                           /// ⭐ + ☑ + ⋮ MENU
                           trailing: Row(

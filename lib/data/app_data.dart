@@ -2,23 +2,29 @@ import 'package:hive/hive.dart';
 import '../models/shopping_list.dart';
 
 class AppData {
-  static List<String> defaultCategories = [
-    "Dairy",
-    "Vegetables",
-    "Fruits",
-    "Meat",
-    "Snacks",
-    "Beverages",
-    "Grains",
-    "Household",
-    "Frozen",
-    "Other",
-  ];
+  static bool isDarkMode = false;
 
-  static List<String> categories = List.from(defaultCategories);
+  // Persistent currency selection
+  static String selectedCurrency = 'USD';
+
+  static const Map<String, String> currencySymbols = {
+    'USD': '\$',
+    'KES': 'KSh ',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+  };
 
   static Box<ShoppingList> get shoppingListsBox =>
       Hive.box<ShoppingList>('shoppingLists');
 
-  static bool isDarkMode = false;
+  static List<String> defaultCategories = [
+    'Fruits',
+    'Vegetables',
+    'Dairy',
+    'Meat',
+    'Bakery',
+  ];
+
+  static List<String> categories = defaultCategories.toList();
 }
