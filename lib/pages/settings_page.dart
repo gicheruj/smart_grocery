@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import '../models/shopping_list.dart';
 import '../data/app_data.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -9,130 +11,41 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final TextEditingController _newCategoryController = TextEditingController();
-
-  void _addCategory() {
-    final name = _newCategoryController.text.trim();
-    if (name.isEmpty) return;
-    if (!AppData.categories.contains(name)) {
-      setState(() {
-        AppData.categories.add(name);
-      });
-      _newCategoryController.clear();
-    }
-  }
-
-  void _editCategory(int index) {
-    final controller = TextEditingController(text: AppData.categories[index]);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Edit Category"),
-        content: TextField(controller: controller),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                AppData.categories[index] = controller.text.trim();
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _deleteCategory(int index) {
-    final category = AppData.categories[index];
-
-    // Prevent deletion if items exist in this category
-    bool used = AppData.shoppingListsBox.values.toList().any((list) =>
-        list.items.any((item) => item.category == category));
-
-    if (used) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Cannot delete category: items exist in it")),
-      );
-      return;
-    }
-
-    setState(() {
-      AppData.categories.removeAt(index);
-    });
-  }
+  // Currency selection
+  final List<String> _currencies = ['USD', 'KES', 'EUR', 'GBP', 'JPY'];
+  String _selectedCurrency = 'USD';
 
   @override
   Widget build(BuildContext context) {
+    final totalLists = AppData.shoppingListsBox.length;
+    int totalItems = 0;
+    for (var list in AppData.shoppingListsBox.allLists) {
+      totalItems += list.items.length;
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: ListView(
           children: [
-            // Dark/Light Mode Toggle
-            SwitchListTile(
-              title: const Text("Dark Mode"),
-              value: AppData.isDarkMode,
-              onChanged: (val) {
-                setState(() {
-                  AppData.isDarkMode = val;
-                });
-              },
-              secondary: const Icon(Icons.brightness_6),
-            ),
-            const SizedBox(height: 12),
-
-            // Categories Section
-            const Text(
-              "Categories",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...AppData.categories.asMap().entries.map((entry) {
-              final index = entry.key;
-              final category = entry.value;
-              return Card(
-                child: ListTile(
-                  title: Text(category),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _editCategory(index),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _deleteCategory(index),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 12),
-
-            // Add new category
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _newCategoryController,
-                    decoration: const InputDecoration(
-                      labelText: "New Category",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addCategory,
-                  child: const Text("Add"),
-                ),
-              ],
+            // Currency Selector
+            ListTile(
+              leading: const Icon(Icons.monetization_on),
+              title: const Text("Currency"),
+              trailing: DropdownButton<String>(
+                value: _selectedCurrency,
+                items: _currencies
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedCurrency = value;
+                    });
+                  }
+                },
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -141,10 +54,11 @@ class _SettingsPageState extends State<SettingsPage> {
               "App Info",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const ListTile(
-              title: Text("Smart Grocery"),
-              subtitle: Text("Version 1.0"),
-              leading: Icon(Icons.info_outline),
+            ListTile(
+              title: const Text("Smart Grocery"),
+              subtitle:
+                  Text("Version 1.0 • $totalLists lists • $totalItems items"),
+              leading: const Icon(Icons.info_outline),
             ),
             const SizedBox(height: 12),
 
@@ -152,17 +66,27 @@ class _SettingsPageState extends State<SettingsPage> {
             ElevatedButton.icon(
               onPressed: () {
                 setState(() {
-                  AppData.shoppingListsBox.values.toList().clear();
+                  AppData.shoppingListsBox.clear();
                   AppData.categories = AppData.defaultCategories.toList();
                 });
               },
               icon: const Icon(Icons.refresh),
               label: const Text("Reset All Data"),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+// Optional extension for Hive Box iteration
+extension HiveLists on Box<ShoppingList> {
+  Iterable<ShoppingList> get allLists sync* {
+    for (int i = 0; i < length; i++) {
+      yield getAt(i)!;
+    }
   }
 }

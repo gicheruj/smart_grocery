@@ -4,6 +4,7 @@ import '../models/shopping_item.dart';
 
 class ShoppingListPage extends StatefulWidget {
   final ShoppingList list;
+
   const ShoppingListPage({super.key, required this.list});
 
   @override
@@ -16,182 +17,172 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
 
-  void _addItem() {
-    _nameController.clear();
-    _priceController.clear();
-    _categoryController.clear();
-    _quantityController.text = "1"; // default quantity
+  /// 🎨 CATEGORY COLOR GENERATOR
+  Color _getCategoryColor(String category) {
+    final colors = [
+      Colors.green,
+      Colors.blue,
+      Colors.orange,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.indigo,
+      Colors.brown,
+    ];
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextField(
-                controller: _categoryController,
-                decoration: const InputDecoration(labelText: 'Category (optional)'),
-              ),
-              TextField(
-                controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Quantity'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: _priceController,
-                decoration: const InputDecoration(labelText: 'Price per item'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () {
-                final name = _nameController.text.trim();
-                final category = _categoryController.text.trim().isEmpty ? 'Other' : _categoryController.text.trim();
-                final quantity = int.tryParse(_quantityController.text.trim()) ?? 1;
-                final pricePerItem = double.tryParse(_priceController.text.trim()) ?? 0.0;
-
-                if (name.isEmpty) return;
-
-                setState(() {
-                  widget.list.items.add(
-                    ShoppingItem(
-                      name: name,
-                      category: category,
-                      quantity: quantity,
-                      pricePerItem: pricePerItem,
-                    ),
-                  );
-                  widget.list.save(); // SAVE changes
-                });
-
-                Navigator.pop(context);
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
+    final index = category.toLowerCase().hashCode % colors.length;
+    return colors[index.abs()];
   }
 
-  void _editItem(int index) {
-    final item = widget.list.items[index];
-    _nameController.text = item.name;
-    _categoryController.text = item.category;
-    _quantityController.text = item.quantity.toString();
-    _priceController.text = item.pricePerItem.toStringAsFixed(2);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: _categoryController, decoration: const InputDecoration(labelText: 'Category')),
-              TextField(controller: _quantityController, decoration: const InputDecoration(labelText: 'Quantity'), keyboardType: TextInputType.number),
-              TextField(controller: _priceController, decoration: const InputDecoration(labelText: 'Price per item'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
-              Row(
-                children: [
-                  const Text('Favorite:'),
-                  const SizedBox(width: 8),
-                  Checkbox(
-                    value: item.isFavorite,
-                    onChanged: (v) {
-                      setState(() {
-                        item.isFavorite = v ?? false;
-                        widget.list.save();
-                      });
-                    },
-                  )
-                ],
-              )
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () {
-                final newName = _nameController.text.trim();
-                final newCategory = _categoryController.text.trim().isEmpty ? 'Other' : _categoryController.text.trim();
-                final newQuantity = int.tryParse(_quantityController.text.trim()) ?? 1;
-                final newPricePerItem = double.tryParse(_priceController.text.trim()) ?? 0.0;
-
-                if (newName.isEmpty) return;
-
-                setState(() {
-                  widget.list.items[index] = widget.list.items[index].copyWith(
-                    name: newName,
-                    category: newCategory,
-                    quantity: newQuantity,
-                    pricePerItem: newPricePerItem,
-                  );
-                  widget.list.save(); // SAVE edits
-                });
-
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _confirmDeleteItem(int index) {
-    final item = widget.list.items[index];
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete item?'),
-          content: Text('Delete "${item.name}" from this list?'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  widget.list.items.removeAt(index);
-                  widget.list.save();
-                });
-                Navigator.pop(context);
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _toggleFavorite(int index) {
+  void _resetBoughtItems() {
     setState(() {
-      widget.list.items[index].isFavorite = !widget.list.items[index].isFavorite;
+      for (var item in widget.list.items) {
+        item.isBought = false;
+      }
       widget.list.save();
     });
   }
 
-  double get total => widget.list.items.fold(0.0, (sum, item) => sum + item.totalPrice);
+  void _addItem() {
+    _nameController.clear();
+    _priceController.clear();
+    _categoryController.clear();
+    _quantityController.text = "1";
+
+    showDialog(
+      context: context,
+      builder: (_) => _buildItemDialog(isEditing: false),
+    );
+  }
+
+  void _editItem(ShoppingItem item) {
+    _nameController.text = item.name;
+    _categoryController.text = item.category;
+    _quantityController.text = item.quantity.toString();
+    _priceController.text = item.pricePerItem.toString();
+
+    showDialog(
+      context: context,
+      builder: (_) => _buildItemDialog(isEditing: true, item: item),
+    );
+  }
+
+  Widget _buildItemDialog({required bool isEditing, ShoppingItem? item}) {
+    return AlertDialog(
+      title: Text(isEditing ? "Edit Item" : "Add Item"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: "Name"),
+          ),
+          TextField(
+            controller: _categoryController,
+            decoration: const InputDecoration(labelText: "Category"),
+          ),
+          TextField(
+            controller: _quantityController,
+            decoration: const InputDecoration(labelText: "Quantity"),
+            keyboardType: TextInputType.number,
+          ),
+          TextField(
+            controller: _priceController,
+            decoration: const InputDecoration(labelText: "Price per item"),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel")),
+        ElevatedButton(
+          onPressed: () {
+            final name = _nameController.text.trim();
+            final category = _categoryController.text.trim().isEmpty
+                ? "Other"
+                : _categoryController.text.trim();
+            final quantity =
+                int.tryParse(_quantityController.text.trim()) ?? 1;
+            final price =
+                double.tryParse(_priceController.text.trim()) ?? 0.0;
+
+            if (name.isEmpty) return;
+
+            setState(() {
+              if (isEditing && item != null) {
+                item.name = name;
+                item.category = category;
+                item.quantity = quantity;
+                item.pricePerItem = price;
+              } else {
+                widget.list.items.add(
+                  ShoppingItem(
+                    name: name,
+                    category: category,
+                    quantity: quantity,
+                    pricePerItem: price,
+                  ),
+                );
+              }
+              widget.list.save();
+            });
+
+            Navigator.pop(context);
+          },
+          child: Text(isEditing ? "Save" : "Add"),
+        ),
+      ],
+    );
+  }
+
+  void _deleteItem(ShoppingItem item) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Item"),
+        content: Text("Are you sure you want to delete '${item.name}'?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              setState(() {
+                widget.list.items.remove(item);
+                widget.list.save();
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double get total =>
+      widget.list.items.fold(0.0, (sum, item) => sum + item.totalPrice);
 
   @override
   Widget build(BuildContext context) {
+    final sortedItems = [...widget.list.items];
+    sortedItems.sort((a, b) =>
+        a.category.toLowerCase().compareTo(b.category.toLowerCase()));
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.list.name),
         backgroundColor: Colors.green[700],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _resetBoughtItems,
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addItem,
@@ -205,48 +196,96 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             color: Colors.green[100],
             padding: const EdgeInsets.all(12),
             child: Text(
-              'Total: \$${total.toStringAsFixed(2)}',
+              "Total: \$${total.toStringAsFixed(2)}",
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
-            child: widget.list.items.isEmpty
-                ? const Center(child: Text('No items in this list yet'))
+            child: sortedItems.isEmpty
+                ? const Center(child: Text("No items yet"))
                 : ListView.builder(
-                    itemCount: widget.list.items.length,
+                    itemCount: sortedItems.length,
                     itemBuilder: (context, index) {
-                      final item = widget.list.items[index];
+                      final item = sortedItems[index];
+                      final categoryColor =
+                          _getCategoryColor(item.category);
+
                       return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Colors.green[200],
-                            child: Text(item.category.isNotEmpty ? item.category[0].toUpperCase() : '?'),
+                            backgroundColor: categoryColor,
+                            child: Text(
+                              item.category[0].toUpperCase(),
+                              style:
+                                  const TextStyle(color: Colors.white),
+                            ),
                           ),
-                          title: Text(item.name),
+                          title: Text(
+                            item.name,
+                            style: TextStyle(
+                              decoration: item.isBought
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                            ),
+                          ),
                           subtitle: Text(
-                              '${item.category} • ${item.quantity} x \$${item.pricePerItem.toStringAsFixed(2)} = \$${item.totalPrice.toStringAsFixed(2)}'),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'edit':
-                                  _editItem(index);
-                                  break;
-                                case 'delete':
-                                  _confirmDeleteItem(index);
-                                  break;
-                                case 'fav':
-                                  _toggleFavorite(index);
-                                  break;
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                              PopupMenuItem(
-                                value: 'fav',
-                                child: Text(item.isFavorite ? 'Unfavorite' : 'Add to favorites'),
+                              "${item.category} • ${item.quantity} x \$${item.pricePerItem.toStringAsFixed(2)} = \$${item.totalPrice.toStringAsFixed(2)}"),
+
+                          /// ⭐ + ☑ + ⋮ MENU
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // FAVORITE BUTTON
+                              IconButton(
+                                icon: Icon(
+                                  item.isFavorite
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    item.isFavorite =
+                                        !item.isFavorite;
+                                    widget.list.save();
+                                  });
+                                },
+                              ),
+
+                              // CHECKBOX
+                              Checkbox(
+                                value: item.isBought,
+                                onChanged: (value) {
+                                  setState(() {
+                                    item.isBought = value ?? false;
+                                    widget.list.save();
+                                  });
+                                },
+                              ),
+
+                              // POPUP MENU (NEAR ITEM)
+                              PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    _editItem(item);
+                                  } else if (value == 'delete') {
+                                    _deleteItem(item);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text("Edit"),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text("Delete"),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

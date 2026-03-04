@@ -2,12 +2,25 @@ import 'package:hive/hive.dart';
 
 part 'shopping_item.g.dart';
 
-class ShoppingItem {
+@HiveType(typeId: 0)
+class ShoppingItem extends HiveObject {
+  @HiveField(0)
   String name;
+
+  @HiveField(1)
   String category;
+
+  @HiveField(2)
   int quantity;
+
+  @HiveField(3)
   double pricePerItem;
+
+  @HiveField(4)
   bool isFavorite;
+
+  @HiveField(5)
+  bool isBought; // NEW FIELD
 
   ShoppingItem({
     required this.name,
@@ -15,9 +28,9 @@ class ShoppingItem {
     this.quantity = 1,
     required this.pricePerItem,
     this.isFavorite = false,
+    this.isBought = false,
   });
 
-  // Total price = quantity * pricePerItem
   double get totalPrice => quantity * pricePerItem;
 
   ShoppingItem copyWith({
@@ -26,6 +39,7 @@ class ShoppingItem {
     int? quantity,
     double? pricePerItem,
     bool? isFavorite,
+    bool? isBought,
   }) {
     return ShoppingItem(
       name: name ?? this.name,
@@ -33,6 +47,7 @@ class ShoppingItem {
       quantity: quantity ?? this.quantity,
       pricePerItem: pricePerItem ?? this.pricePerItem,
       isFavorite: isFavorite ?? this.isFavorite,
+      isBought: isBought ?? this.isBought,
     );
   }
 }

@@ -31,11 +31,22 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   int _currentIndex = 0;
 
+  // Local state to ensure instant theme change
+  bool _isDarkMode = AppData.isDarkMode;
+
   final List<Widget> _pages = const [
     HomePage(),
     FavoritesPage(),
     SettingsPage(),
   ];
+
+  // Call this from SettingsPage when the toggle changes
+  void toggleTheme(bool value) {
+    setState(() {
+      _isDarkMode = value;
+      AppData.isDarkMode = value; // keep AppData synced
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +58,7 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
       darkTheme: ThemeData.dark(useMaterial3: true),
-      themeMode: AppData.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
         body: _pages[_currentIndex],
         bottomNavigationBar: NavigationBar(
